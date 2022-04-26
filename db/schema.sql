@@ -22,6 +22,6 @@ CREATE TABLE employee (
   id INT AUTO_INCREMENT PRIMARY KEY,
   first_name VARCHAR(30) ,
   last_name VARCHAR(30) ,
-  role_id INT FOREIGN KEY REFERENCES job_role(id) ON DELETE SET NULL,
-  manager_id INT FOREIGN KEY REFERENCES employee(id) ON DELETE SET NULL
+  role_id INTEGER FOREIGN KEY REFERENCES job_role(id),
+  manager_id INTEGER FOREIGN KEY REFERENCES employee(id)
 );
