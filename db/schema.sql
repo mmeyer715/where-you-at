@@ -5,14 +5,14 @@ USE employee_db;
 
 CREATE TABLE department (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  dep_name VARCHAR(30)
+  dep_name VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE job_role (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(30),
+  title VARCHAR(30) NOT NULL,
   salary DECIMAL,
-  department_id INT,
+  department_id INT NOT NULL,
   FOREIGN KEY (department_id)
   REFERENCES department(id)
   ON DELETE SET NULL
@@ -20,7 +20,7 @@ CREATE TABLE job_role (
 
 CREATE TABLE employee (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  first_name VARCHAR(30) ,
+  first_name VARCHAR(30) NOT NULL,
   last_name VARCHAR(30) ,
   role_id INTEGER,
   manager_id INTEGER, 
