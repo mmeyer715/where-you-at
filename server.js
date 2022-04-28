@@ -14,7 +14,7 @@ const db = mysql.createConnection(
 );
 
 /* Department Queries */
-addDepartment();
+
 // View all Departments
 function viewDepartments () {
     const sql = `SELECT * FROM department`;
@@ -75,7 +75,18 @@ function viewRoles () {
     });
 };
 
-viewEmployeeDepartment ("Warehouse");
+function addRole () {
+    const sql = `INSERT INTO job_role (title, salary, department_id)
+                 VALUES ('Software Engineer', 90000.00, 1)`
+    db.query(sql, (err, rows) => {
+        if (err) {
+            throw err;
+        }
+        console.table(rows);
+        menuOptions();
+    });
+};
+
 
 /* Employee Queries */
 
@@ -127,6 +138,19 @@ function viewEmployeeDepartment (department) {
     db.query(sql, (err, rows) => {
         if (err) {
          throw err
+        }
+        console.table(rows);
+        menuOptions();
+    });
+};
+addEmployee();
+// Add employee
+function addEmployee () {
+    const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                 VALUES ('Rommel', 'Villagomez', 5, 1)`
+    db.query(sql, (err, rows) => {
+        if (err) {
+            throw err;
         }
         console.table(rows);
         menuOptions();
