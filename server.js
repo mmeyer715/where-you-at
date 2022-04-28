@@ -14,7 +14,7 @@ const db = mysql.createConnection(
 );
 
 /* Department Queries */
-
+addDepartment();
 // View all Departments
 function viewDepartments () {
     const sql = `SELECT * FROM department`;
@@ -26,6 +26,38 @@ function viewDepartments () {
       console.table(rows);
       menuOptions();
     });
+};
+
+// View departments total utilized budget
+function viewDepartmentBudget (department) {
+    const sql = `SELECT
+                    SUM(salary) AS "Total Utilized Budget"
+                 FROM department A, job_role B, employee C 
+                 WHERE A.id = B.department_id 
+                 AND B.id = C.role_id
+                 AND A.dep_name = '${department}'`;
+  
+    db.query(sql, (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      console.table(rows);
+      menuOptions();
+    });
+};
+
+// add department
+function addDepartment () {
+    const sql = `INSERT INTO department (dep_name)
+                 VALUES ('Information Technology')`
+    db.query(sql, (err, rows) => {
+        if (err) {
+            throw err;
+        }
+        console.table(rows);
+        menuOptions();
+    })
+
 };
 
 /* Role Queries */
@@ -69,7 +101,7 @@ function viewEmployeeManager (manager) {
 	                B.last_name AS "manger_last" 
                 FROM employee A, employee B 
                 WHERE A.manager_id = B.id 
-                AND B.id = '${manager}';`
+                AND B.id = '${manager}'`
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -80,6 +112,7 @@ function viewEmployeeManager (manager) {
     });
 };
 
+// View all Employees by Department
 function viewEmployeeDepartment (department) {
     const sql = `SELECT 
 	                A.first_name AS "employee_first", 
@@ -89,7 +122,7 @@ function viewEmployeeDepartment (department) {
                 FROM employee A, job_role B, department C 
                 WHERE A.role_id = B.id 
                 AND B.department_id = C.id 
-                AND C.dep_name = '${department}';`
+                AND C.dep_name = '${department}'`
 
     db.query(sql, (err, rows) => {
         if (err) {

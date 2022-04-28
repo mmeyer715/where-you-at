@@ -101,3 +101,4 @@ dist
 
 # Environment File(s)
 .env
+.env.test
