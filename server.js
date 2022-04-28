@@ -1,6 +1,6 @@
 // required packages
 const mysql = require('mysql2');
-const dbEnv = require('dotenv').config();
+require('dotenv').config();
 
 // connect to db
 const db = mysql.createConnection(
@@ -23,7 +23,7 @@ const db = mysql.createConnection(
 //   console.log(rows);
 // });
 
-// Get all employees
+//Get all employees
 // db.query(`SELECT * FROM employee`, (err, rows) => {
 //   console.log(rows);
 // });
