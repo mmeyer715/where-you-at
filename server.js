@@ -13,17 +13,89 @@ const db = mysql.createConnection(
     console.log('Connected to the ' + process.env.DB_NAME  + ' database!')
 );
 
-// Get all departments
-// db.query(`SELECT * FROM department`, (err, rows) => {
-//   console.log(rows);
-// });
+/* Department Queries */
 
-// Get all roles
-// db.query(`SELECT * FROM job_role`, (err, rows) => {
-//   console.log(rows);
-// });
+// View all Departments
+function viewDepartments () {
+    const sql = `SELECT * FROM department`;
+  
+    db.query(sql, (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      console.table(rows);
+      menuOptions();
+    });
+};
 
-//Get all employees
-// db.query(`SELECT * FROM employee`, (err, rows) => {
-//   console.log(rows);
-// });
+/* Role Queries */
+
+// View all Roles
+function viewRoles () {
+    const sql = `SELECT * FROM job_role`
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+         throw err
+        }
+        console.table(rows);
+        menuOptions();
+    });
+};
+
+viewEmployeeDepartment ("Warehouse");
+
+/* Employee Queries */
+
+// View all Employees
+function viewEmployees () {
+    const sql = `SELECT * FROM employee`
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+         throw err
+        }
+        console.table(rows);
+        menuOptions();
+    });
+};
+
+// View all Employees By Manager
+function viewEmployeeManager (manager) {
+    const sql = `SELECT 
+	                A.first_name AS "employee_first", 
+	                A.last_name AS "employee_last", 
+	                B.first_name AS "manager_first", 
+	                B.last_name AS "manger_last" 
+                FROM employee A, employee B 
+                WHERE A.manager_id = B.id 
+                AND B.id = '${manager}';`
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+         throw err
+        }
+        console.table(rows);
+        menuOptions();
+    });
+};
+
+function viewEmployeeDepartment (department) {
+    const sql = `SELECT 
+	                A.first_name AS "employee_first", 
+	                A.last_name AS "employee_last", 
+	                B.title, 
+	                C.dep_name 
+                FROM employee A, job_role B, department C 
+                WHERE A.role_id = B.id 
+                AND B.department_id = C.id 
+                AND C.dep_name = '${department}';`
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+         throw err
+        }
+        console.table(rows);
+        menuOptions();
+    });
+};
