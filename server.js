@@ -13,6 +13,8 @@ const db = mysql.createConnection(
     console.log('Connected to the ' + process.env.DB_NAME  + ' database!')
 );
 
+// TODO: create inquirer functionality
+
 /* Department Queries */
 
 // View all Departments
@@ -28,7 +30,7 @@ function viewDepartments () {
     });
 };
 
-// View departments total utilized budget
+// View Departments Total Utilized Budget
 function viewDepartmentBudget (department) {
     const sql = `SELECT
                     SUM(salary) AS "Total Utilized Budget"
@@ -46,10 +48,10 @@ function viewDepartmentBudget (department) {
     });
 };
 
-// add department
-function addDepartment () {
+// Add Department
+function addDepartment (departmentName) {
     const sql = `INSERT INTO department (dep_name)
-                 VALUES ('Information Technology')`
+                 VALUES ('${departmentName}')`
     db.query(sql, (err, rows) => {
         if (err) {
             throw err;
@@ -58,6 +60,19 @@ function addDepartment () {
         menuOptions();
     })
 
+};
+
+// Delete Department
+function deleteDepartment (id) {
+    const sql = `DELETE FROM department WHERE id = ${id}`
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+            throw err;
+        }
+        console.table(rows);
+        menuOptions();
+    });
 };
 
 /* Role Queries */
@@ -75,9 +90,23 @@ function viewRoles () {
     });
 };
 
-function addRole () {
+// Add Role
+function addRole (title, salary, departmentId) {
     const sql = `INSERT INTO job_role (title, salary, department_id)
-                 VALUES ('Software Engineer', 90000.00, 1)`
+                 VALUES ('${title}', ${salary}, ${departmentId})`
+    db.query(sql, (err, rows) => {
+        if (err) {
+            throw err;
+        }
+        console.table(rows);
+        menuOptions();
+    });
+};
+
+// Delete Role
+function deleteRole (id) {
+    const sql = `DELETE FROM job_role WHERE id = ${id}`
+
     db.query(sql, (err, rows) => {
         if (err) {
             throw err;
@@ -103,7 +132,7 @@ function viewEmployees () {
     });
 };
 
-// View all Employees By Manager
+// View all Employees by Manager
 function viewEmployeeManager (manager) {
     const sql = `SELECT 
 	                A.first_name AS "employee_first", 
@@ -143,11 +172,42 @@ function viewEmployeeDepartment (department) {
         menuOptions();
     });
 };
-addEmployee();
-// Add employee
-function addEmployee () {
+
+// Add Employee
+function addEmployee (firstName, lastName, roleId, managerId) {
     const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                 VALUES ('Rommel', 'Villagomez', 5, 1)`
+                 VALUES ('${firstName}', '${lastName}', ${roleId}, ${managerId})`
+    
+    db.query(sql, (err, rows) => {
+        if (err) {
+            throw err;
+        }
+        console.table(rows);
+        menuOptions();
+    });
+
+};
+
+// Update Manager ID
+function updateEmployee (employeeId, managerId) {
+    const sql = `UPDATE employee 
+                 SET manager_id = ${managerId}
+                 WHERE id = ${employeeId}`
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+            throw err;
+        }
+        console.table(rows);
+        menuOptions();
+    });
+
+};
+
+// Delete Employee
+function deleteEmployee (id) {
+    const sql = `DELETE FROM employee WHERE id = ${id}`
+
     db.query(sql, (err, rows) => {
         if (err) {
             throw err;
