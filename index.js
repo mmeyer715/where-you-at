@@ -67,6 +67,11 @@ function menuOptions () {
         if (menuChoice.menu === 'View All Roles') {
             viewRoles();
         };
+        if (menuChoice.menu === 'Add Role') {
+            addRole();
+        };
+
+        // Employee Options
         if (menuChoice.menu === 'View All Employees') {
             viewEmployees();
         };
@@ -196,7 +201,13 @@ function deleteDepartment (id) {
 
 // View all Roles
 function viewRoles () {
-    const sql = `SELECT * FROM job_role`
+    const sql = `SELECT 
+                    A.id,
+                    A.title,
+                    A.salary,
+                    B.dep_name
+                 FROM job_role A, department B
+                 WHERE A.department_id = B.id`
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -208,15 +219,62 @@ function viewRoles () {
 };
 
 // Add Role
-function addRole (title, salary, departmentId) {
-    const sql = `INSERT INTO job_role (title, salary, department_id)
-                 VALUES (?, ?, ?)`
-    db.query(sql, [title, salary, departmentId], (err, rows) => {
+function addRole () {
+
+    let array = [];
+    let sql = 'SELECT dep_name FROM department';
+
+    db.query(sql, (err, rows) => {
         if (err) {
-            throw err;
+          throw err;
         }
-        console.table(rows);
-        menuOptions();
+
+        Object.keys(rows).forEach(function(key) {
+            var row = rows[key];
+            array.push(row.dep_name);
+        });
+
+        inquirer.prompt([
+            {
+                type: 'input',
+                name: 'title',
+                message: 'Input role title:'
+            },
+            {
+                type: 'input',
+                name: 'salary',
+                message: 'Input salary:'
+            },
+            {
+                type: 'list',
+                name: 'department',
+                message: 'Choose a department:',
+                choices: array
+            }
+        ])
+        .then(function (menuChoice) {
+            let depId = 0;
+
+            sql = `SELECT id FROM department
+                   WHERE dep_name = ?`
+            db.query(sql, [menuChoice.department], (err, rows) => {
+                if (err) {
+                    throw err;
+                }
+                depId = rows[0].id;
+                console.log(depId);
+
+                sql = `INSERT INTO job_role (title, salary, department_id)
+                 VALUES (?, ?, ?)`
+                db.query(sql, [menuChoice.title, menuChoice.salary, depId], (err, rows) => {
+                    if (err) {
+                        throw err;
+                    }
+                    console.table(rows);
+                    menuOptions();
+                });
+            });
+        });
     });
 };
 
