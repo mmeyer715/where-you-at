@@ -285,7 +285,7 @@ function addRole () {
 };
 
 // Delete Role
-function deleteRole (id) {
+function deleteRole () {
 
     let array = [];
     let sql = 'SELECT title FROM job_role';
@@ -346,7 +346,19 @@ function viewRoles () {
 
 // View all Employees
 function viewEmployees () {
-    const sql = `SELECT * FROM employee`
+    const sql = `SELECT 
+                    A.id AS "employee_ID",
+                    A.first_name AS "employee_first", 
+                    A.last_name AS "employee_last",
+                    C.title AS "employee_role",
+                    D.dep_name AS "department",
+                    B.id AS "manager_ID", 
+                    B.first_name AS "manager_first", 
+                    B.last_name AS "manger_last" 
+                FROM employee A, employee B, job_role C, department D
+                WHERE A.manager_id = B.id 
+                AND A.role_id = C.id
+                AND C.department_id = D.id`
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -447,7 +459,7 @@ function updateEmployee (employeeId, managerId) {
 function deleteEmployee () {
 
     let array = [];
-    let sql = `SELECT CONCAT(first_name, ' ' ,last_name) AS employeeName FROM employee `;
+    let sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS employeeName FROM employee `;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -457,6 +469,7 @@ function deleteEmployee () {
         Object.keys(rows).forEach(function(key) {
             var row = rows[key];
             array.push(row.employeeName);
+            console.log(row.employeeName);
         });
 
         inquirer.prompt(
@@ -468,9 +481,10 @@ function deleteEmployee () {
             }
         )
         .then(function (menuChoice) {
-            sql = `DELETE FROM employee WHERE '${menuChoice.employee}' = ?`
-
-            db.query(sql, [menuChoice.employee], (err, rows) => {
+            const nameSplit = menuChoice.employee.split(' ');
+            sql = `DELETE FROM employee WHERE id = ?`
+            
+            db.query(sql, nameSplit[0], (err, rows) => {
                 if (err) {
                     throw err;
                 }
@@ -478,7 +492,7 @@ function deleteEmployee () {
                 menuOptions();
             });
         });
-    });
+     });
 };
 
 // Start App
