@@ -15,7 +15,7 @@ const db = mysql.createConnection(
     console.log('Connected to the ' + process.env.DB_NAME  + ' database!')
 );
 
-// TODO: create inquirer functionality
+// Base Inquirer Question
 function menuOptions () {
     inquirer.prompt(
         {
@@ -80,8 +80,9 @@ function viewDepartments () {
 function viewDepartmentBudget () {
 
     let array = [];
-    
-    db.query('SELECT dep_name FROM department', (err, rows) => {
+    let sql = 'SELECT dep_name FROM department';
+
+    db.query(sql, (err, rows) => {
         if (err) {
           throw err;
         }
@@ -100,12 +101,12 @@ function viewDepartmentBudget () {
             }
         )
         .then(function (menuChoice) {
-            const sql = `SELECT
+            sql = `SELECT
                     SUM(salary) AS "Total Utilized Budget"
-                 FROM department A, job_role B, employee C 
-                 WHERE A.id = B.department_id 
-                 AND B.id = C.role_id
-                 AND A.dep_name = ?`;
+                   FROM department A, job_role B, employee C 
+                   WHERE A.id = B.department_id 
+                   AND B.id = C.role_id
+                   AND A.dep_name = ?`;
   
             db.query(sql, [menuChoice.departmentBudget], (err, rows) => {
             if (err) {
@@ -300,34 +301,6 @@ function deleteEmployee (id) {
         menuOptions();
     });
 };
-
-/* Inquirer List Builder */
-async function buildListChoices (column, table) {
-    const sql = `SELECT ${column} FROM ${table}`;
-    let array = [];
-  
-    const query = util.promisify(db.query).bind(db);
-
-    try{
-        const result = await query(sql);
-        Object.keys(result).forEach(function(key) {
-            var row = result[key];
-            array.push(row[column]);
-        });
-        return array;
-
-    } catch (error){
-        console.log(error);
-        return [];
-    } finally {
-        db.end();
-    }
-}
-
-async function InitialProcess() {
-    var DbResult = await buildListChoices('dep_name', 'department');
-    return DbResult;
-}
 
 // Start App
 menuOptions();
