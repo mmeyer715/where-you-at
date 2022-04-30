@@ -1,6 +1,7 @@
 // required packages
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
+const util = require('util');
 require('dotenv').config();
 
 // connect to db
@@ -16,7 +17,7 @@ const db = mysql.createConnection(
 
 // TODO: create inquirer functionality
 function menuOptions () {
-    inquirer.prompt([
+    inquirer.prompt(
         {
             type: 'list',
             pageSize: 15,
@@ -39,21 +40,8 @@ function menuOptions () {
                 'Update Employee Manager',
                 'Delete Employee'
             ]
-        },
-        {
-            type: 'list',
-            name: 'departmentBudget',
-            message: 'Which department budget would you like to see?',
-            when: (answers) => answers.menu === 'View Department Utilized Budget',
-            choices: [
-                'Customer Service',
-                'Financing',
-                'Warehouse',
-                'Retail'
-            ]
         }
-
-    ])
+    )
     .then(function (menuChoice) {
         if (menuChoice.menu === 'I\'m Done') {
             process.exit();
@@ -61,8 +49,8 @@ function menuOptions () {
         if (menuChoice.menu === 'View All Departments') {
             viewDepartments();
         };
-        if (menuChoice.hasOwnProperty('departmentBudget') === true) {
-            viewDepartmentBudget(menuChoice.departmentBudget);
+        if (menuChoice.menu === 'View Department Utilized Budget') {
+            viewDepartmentBudget();
         };
         if (menuChoice.menu === 'View All Roles') {
             viewRoles();
@@ -89,28 +77,52 @@ function viewDepartments () {
 };
 
 // View Departments Total Utilized Budget
-function viewDepartmentBudget (department) {
-    const sql = `SELECT
+function viewDepartmentBudget () {
+
+    let array = [];
+    
+    db.query('SELECT dep_name FROM department', (err, rows) => {
+        if (err) {
+          throw err;
+        }
+
+        Object.keys(rows).forEach(function(key) {
+            var row = rows[key];
+            array.push(row.dep_name);
+        });
+
+        inquirer.prompt(
+            {
+                type: 'list',
+                name: 'departmentBudget',
+                message: 'Which department budget would you like to see?',
+                choices: array
+            }
+        )
+        .then(function (menuChoice) {
+            const sql = `SELECT
                     SUM(salary) AS "Total Utilized Budget"
                  FROM department A, job_role B, employee C 
                  WHERE A.id = B.department_id 
                  AND B.id = C.role_id
-                 AND A.dep_name = '${department}'`;
+                 AND A.dep_name = ?`;
   
-    db.query(sql, (err, rows) => {
-      if (err) {
-        throw err;
-      }
-      console.table(rows);
-      menuOptions();
+            db.query(sql, [menuChoice.departmentBudget], (err, rows) => {
+            if (err) {
+                throw err;
+            }
+            console.table(rows);
+            menuOptions();
+            });
+        });
     });
 };
 
 // Add Department
 function addDepartment (departmentName) {
     const sql = `INSERT INTO department (dep_name)
-                 VALUES ('${departmentName}')`
-    db.query(sql, (err, rows) => {
+                 VALUES (?)`
+    db.query(sql, [departmentName], (err, rows) => {
         if (err) {
             throw err;
         }
@@ -122,9 +134,9 @@ function addDepartment (departmentName) {
 
 // Delete Department
 function deleteDepartment (id) {
-    const sql = `DELETE FROM department WHERE id = ${id}`
+    const sql = `DELETE FROM department WHERE id = ?`
 
-    db.query(sql, (err, rows) => {
+    db.query(sql, [id], (err, rows) => {
         if (err) {
             throw err;
         }
@@ -151,8 +163,8 @@ function viewRoles () {
 // Add Role
 function addRole (title, salary, departmentId) {
     const sql = `INSERT INTO job_role (title, salary, department_id)
-                 VALUES ('${title}', ${salary}, ${departmentId})`
-    db.query(sql, (err, rows) => {
+                 VALUES (?, ?, ?)`
+    db.query(sql, [title, salary, departmentId], (err, rows) => {
         if (err) {
             throw err;
         }
@@ -163,9 +175,9 @@ function addRole (title, salary, departmentId) {
 
 // Delete Role
 function deleteRole (id) {
-    const sql = `DELETE FROM job_role WHERE id = ${id}`
+    const sql = `DELETE FROM job_role WHERE id = ?`
 
-    db.query(sql, (err, rows) => {
+    db.query(sql, [id], (err, rows) => {
         if (err) {
             throw err;
         }
@@ -199,9 +211,9 @@ function viewEmployeeManager (manager) {
 	                B.last_name AS "manger_last" 
                 FROM employee A, employee B 
                 WHERE A.manager_id = B.id 
-                AND B.id = '${manager}'`
+                AND B.id = ?`
 
-    db.query(sql, (err, rows) => {
+    db.query(sql, [manager], (err, rows) => {
         if (err) {
          throw err
         }
@@ -220,9 +232,9 @@ function viewEmployeeDepartment (department) {
                 FROM employee A, job_role B, department C 
                 WHERE A.role_id = B.id 
                 AND B.department_id = C.id 
-                AND C.dep_name = '${department}'`
+                AND C.dep_name = ?`
 
-    db.query(sql, (err, rows) => {
+    db.query(sql, [department], (err, rows) => {
         if (err) {
          throw err
         }
@@ -234,9 +246,9 @@ function viewEmployeeDepartment (department) {
 // Add Employee
 function addEmployee (firstName, lastName, roleId, managerId) {
     const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                 VALUES ('${firstName}', '${lastName}', ${roleId}, ${managerId})`
+                 VALUES (?, ?, ?, ?)`
     
-    db.query(sql, (err, rows) => {
+    db.query(sql, [firstName, lastName, roleId, managerId], (err, rows) => {
         if (err) {
             throw err;
         }
@@ -249,10 +261,10 @@ function addEmployee (firstName, lastName, roleId, managerId) {
 // Update Employee Role
 function updateEmployee (employeeId, role) {
     const sql = `UPDATE employee 
-                 SET role_id = ${role}
-                 WHERE id = ${employeeId}`
+                 SET role_id = ?
+                 WHERE id = ?`
 
-    db.query(sql, (err, rows) => {
+    db.query(sql, [employeeId, role], (err, rows) => {
         if (err) {
             throw err;
         }
@@ -264,10 +276,10 @@ function updateEmployee (employeeId, role) {
 // Update Manager ID
 function updateEmployee (employeeId, managerId) {
     const sql = `UPDATE employee 
-                 SET manager_id = ${managerId}
-                 WHERE id = ${employeeId}`
+                 SET manager_id = ?
+                 WHERE id = ?`
 
-    db.query(sql, (err, rows) => {
+    db.query(sql, [employeeId, managerId], (err, rows) => {
         if (err) {
             throw err;
         }
@@ -288,6 +300,34 @@ function deleteEmployee (id) {
         menuOptions();
     });
 };
+
+/* Inquirer List Builder */
+async function buildListChoices (column, table) {
+    const sql = `SELECT ${column} FROM ${table}`;
+    let array = [];
+  
+    const query = util.promisify(db.query).bind(db);
+
+    try{
+        const result = await query(sql);
+        Object.keys(result).forEach(function(key) {
+            var row = result[key];
+            array.push(row[column]);
+        });
+        return array;
+
+    } catch (error){
+        console.log(error);
+        return [];
+    } finally {
+        db.end();
+    }
+}
+
+async function InitialProcess() {
+    var DbResult = await buildListChoices('dep_name', 'department');
+    return DbResult;
+}
 
 // Start App
 menuOptions();

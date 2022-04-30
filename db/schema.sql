@@ -5,12 +5,12 @@ USE employee_db;
 
 CREATE TABLE department (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  dep_name VARCHAR(30) NOT NULL
+  dep_name VARCHAR(30) UNIQUE NOT NULL
 );
 
 CREATE TABLE job_role (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(30) NOT NULL,
+  title VARCHAR(30) UNIQUE NOT NULL,
   salary DECIMAL,
   department_id INT,
   FOREIGN KEY (department_id)
