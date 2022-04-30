@@ -43,15 +43,27 @@ function menuOptions () {
         }
     )
     .then(function (menuChoice) {
+
+        // Exit From Program
         if (menuChoice.menu === 'I\'m Done') {
             process.exit();
         };
+
+        // Department Options
         if (menuChoice.menu === 'View All Departments') {
             viewDepartments();
         };
         if (menuChoice.menu === 'View Department Utilized Budget') {
             viewDepartmentBudget();
         };
+        if (menuChoice.menu === 'Add Department') {
+            addDepartment();
+        };
+        if (menuChoice.menu === 'Delete Department') {
+            deleteDepartment();
+        };
+    
+        // Roles Options
         if (menuChoice.menu === 'View All Roles') {
             viewRoles();
         };
@@ -102,7 +114,7 @@ function viewDepartmentBudget () {
         )
         .then(function (menuChoice) {
             sql = `SELECT
-                    SUM(salary) AS "Total Utilized Budget"
+                    IFNULL(SUM(salary), 0) AS "Total Utilized Budget"
                    FROM department A, job_role B, employee C 
                    WHERE A.id = B.department_id 
                    AND B.id = C.role_id
@@ -120,29 +132,63 @@ function viewDepartmentBudget () {
 };
 
 // Add Department
-function addDepartment (departmentName) {
-    const sql = `INSERT INTO department (dep_name)
-                 VALUES (?)`
-    db.query(sql, [departmentName], (err, rows) => {
-        if (err) {
-            throw err;
-        }
-        console.table(rows);
-        menuOptions();
-    })
+function addDepartment () {
 
+    inquirer.prompt(
+        {
+            type: 'input',
+            name: 'name',
+            message: 'Input new department name:'
+        }
+    )
+    .then(function (menuChoice) {
+        const sql = `INSERT INTO department (dep_name)
+                 VALUES (?)`
+        db.query(sql, [menuChoice.name], (err, rows) => {
+            if (err) {
+                throw err;
+            }
+            console.table(rows);
+            menuOptions();
+        });
+    });
 };
 
 // Delete Department
 function deleteDepartment (id) {
-    const sql = `DELETE FROM department WHERE id = ?`
 
-    db.query(sql, [id], (err, rows) => {
+    let array = [];
+    let sql = 'SELECT dep_name FROM department';
+
+    db.query(sql, (err, rows) => {
         if (err) {
-            throw err;
+          throw err;
         }
-        console.table(rows);
-        menuOptions();
+
+        Object.keys(rows).forEach(function(key) {
+            var row = rows[key];
+            array.push(row.dep_name);
+        });
+
+        inquirer.prompt(
+            {
+                type: 'list',
+                name: 'department',
+                message: 'Which department budget would you like to remove?',
+                choices: array
+            }
+        )
+        .then(function (menuChoice) {
+            sql = `DELETE FROM department WHERE dep_name = ?`
+
+            db.query(sql, [menuChoice.department], (err, rows) => {
+                if (err) {
+                    throw err;
+                }
+                console.table(rows);
+                menuOptions();
+            });
+        });
     });
 };
 
