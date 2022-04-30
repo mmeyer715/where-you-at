@@ -142,7 +142,7 @@ function addDepartment () {
         }
     )
     .then(function (menuChoice) {
-        const sql = `INSERT INTO department (dep_name)
+        const sql = `INSERT IGNORE INTO department (dep_name)
                  VALUES (?)`
         db.query(sql, [menuChoice.name], (err, rows) => {
             if (err) {
