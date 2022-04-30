@@ -70,10 +70,16 @@ function menuOptions () {
         if (menuChoice.menu === 'Add Role') {
             addRole();
         };
+        if (menuChoice.menu === 'Delete Role') {
+            deleteRole();
+        };
 
         // Employee Options
         if (menuChoice.menu === 'View All Employees') {
             viewEmployees();
+        };
+        if (menuChoice.menu === 'Delete Employee') {
+            deleteEmployee();
         };
     });
 };
@@ -179,7 +185,7 @@ function deleteDepartment (id) {
             {
                 type: 'list',
                 name: 'department',
-                message: 'Which department budget would you like to remove?',
+                message: 'Which department would you like to remove?',
                 choices: array
             }
         )
@@ -280,11 +286,55 @@ function addRole () {
 
 // Delete Role
 function deleteRole (id) {
-    const sql = `DELETE FROM job_role WHERE id = ?`
 
-    db.query(sql, [id], (err, rows) => {
+    let array = [];
+    let sql = 'SELECT title FROM job_role';
+
+    db.query(sql, (err, rows) => {
         if (err) {
-            throw err;
+          throw err;
+        }
+
+        Object.keys(rows).forEach(function(key) {
+            var row = rows[key];
+            array.push(row.title);
+        });
+
+        inquirer.prompt(
+            {
+                type: 'list',
+                name: 'role',
+                message: 'Which role would you like to remove?',
+                choices: array
+            }
+        )
+        .then(function (menuChoice) {
+            sql = `DELETE FROM job_role WHERE title = ?`
+
+            db.query(sql, [menuChoice.role], (err, rows) => {
+                if (err) {
+                    throw err;
+                }
+                console.table(rows);
+                menuOptions();
+            });
+        });
+    });
+};
+
+// View all Roles
+function viewRoles () {
+    const sql = `SELECT 
+                    A.id,
+                    A.title,
+                    A.salary,
+                    B.dep_name
+                 FROM job_role A, department B
+                 WHERE A.department_id = B.id`
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+         throw err
         }
         console.table(rows);
         menuOptions();
@@ -394,15 +444,40 @@ function updateEmployee (employeeId, managerId) {
 };
 
 // Delete Employee
-function deleteEmployee (id) {
-    const sql = `DELETE FROM employee WHERE id = ${id}`
+function deleteEmployee () {
+
+    let array = [];
+    let sql = `SELECT CONCAT(first_name, ' ' ,last_name) AS employeeName FROM employee `;
 
     db.query(sql, (err, rows) => {
         if (err) {
-            throw err;
+          throw err;
         }
-        console.table(rows);
-        menuOptions();
+
+        Object.keys(rows).forEach(function(key) {
+            var row = rows[key];
+            array.push(row.employeeName);
+        });
+
+        inquirer.prompt(
+            {
+                type: 'list',
+                name: 'employee',
+                message: 'Which employee would you like to remove?',
+                choices: array
+            }
+        )
+        .then(function (menuChoice) {
+            sql = `DELETE FROM employee WHERE '${menuChoice.employee}' = ?`
+
+            db.query(sql, [menuChoice.employee], (err, rows) => {
+                if (err) {
+                    throw err;
+                }
+                console.table(rows);
+                menuOptions();
+            });
+        });
     });
 };
 
