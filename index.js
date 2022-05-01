@@ -81,6 +81,12 @@ function menuOptions () {
         if (menuChoice.menu === 'Delete Employee') {
             deleteEmployee();
         };
+        if (menuChoice.menu === 'View Employees by Manager') {
+            viewEmployeeManager();
+        };
+        if (menuChoice.menu === 'View Employees by Department') {
+            viewEmployeeDepartment();
+        };
     });
 };
 
@@ -359,7 +365,7 @@ function viewEmployees () {
 };
 
 // View all Employees by Manager
-function viewEmployeeManager (manager) {
+function viewEmployeeByManager (manager) {
     const sql = `SELECT 
 	                A.first_name AS "employee_first", 
 	                A.last_name AS "employee_last", 
@@ -379,8 +385,31 @@ function viewEmployeeManager (manager) {
 };
 
 // View all Employees by Department
-function viewEmployeeDepartment (department) {
-    const sql = `SELECT 
+function viewEmployeeDepartment () {
+	
+	let array = [];
+	let sql = 'SELECT dep_name FROM department';
+	
+	db.query(sql, (err, rows) => {
+		if (err) {
+			throw err;
+		}
+		
+		Object.keys(rows).forEach(function(key) {
+			var row = rows[key];
+			array.push(row.dep_name);
+		});
+		
+		inquirer.prompt(
+			{
+				type: 'list',
+				name: 'departmentEmployees',
+				message: 'Which department do you want to view employees from?',
+				choices: array
+			}
+		)
+		.then(function (menuChoice) {
+			sql = `SELECT 
 	                A.first_name AS "employee_first", 
 	                A.last_name AS "employee_last", 
 	                B.title, 
@@ -388,15 +417,17 @@ function viewEmployeeDepartment (department) {
                 FROM employee A, job_role B, department C 
                 WHERE A.role_id = B.id 
                 AND B.department_id = C.id 
-                AND C.dep_name = ?`
-
-    db.query(sql, [department], (err, rows) => {
-        if (err) {
-         throw err
-        }
-        console.table(rows);
-        menuOptions();
-    });
+                AND C.dep_name = ?`;
+				
+			db.query(sql, [menuChoice.departmentEmployees], (err, rows) => {
+			if (err) {
+				throw err;
+			}
+			console.table(rows);
+			menuOptions();
+			});
+		});
+	});
 };
 
 // Add Employee
@@ -430,7 +461,7 @@ function updateEmployee (employeeId, role) {
 };
 
 // Update Manager ID
-function updateEmployee (employeeId, managerId) {
+function updateEmployeeManager (employeeId, managerId) {
     const sql = `UPDATE employee 
                  SET manager_id = ?
                  WHERE id = ?`
