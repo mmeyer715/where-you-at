@@ -288,7 +288,13 @@ function addRole () {
 function deleteRole () {
 
     let array = [];
-    let sql = 'SELECT title FROM job_role';
+    let sql = `SELECT CONCAT(
+                   A.id, ' ', 
+                   A.title, ' ', 
+                   A.salary, ' ',
+                   B.dep_name) AS "roles" 
+               FROM job_role A, department B 
+               WHERE A.department_id = B.id`;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -297,7 +303,7 @@ function deleteRole () {
 
         Object.keys(rows).forEach(function(key) {
             var row = rows[key];
-            array.push(row.title);
+            array.push(row.roles);
         });
 
         inquirer.prompt(
@@ -309,9 +315,11 @@ function deleteRole () {
             }
         )
         .then(function (menuChoice) {
-            sql = `DELETE FROM job_role WHERE title = ?`
 
-            db.query(sql, [menuChoice.role], (err, rows) => {
+            const nameSplit = menuChoice.role.split(' ');
+            sql = `DELETE FROM job_role WHERE id = ?`
+
+            db.query(sql, [nameSplit[0]], (err, rows) => {
                 if (err) {
                     throw err;
                 }
@@ -321,26 +329,6 @@ function deleteRole () {
         });
     });
 };
-
-// View all Roles
-function viewRoles () {
-    const sql = `SELECT 
-                    A.id,
-                    A.title,
-                    A.salary,
-                    B.dep_name
-                 FROM job_role A, department B
-                 WHERE A.department_id = B.id`
-
-    db.query(sql, (err, rows) => {
-        if (err) {
-         throw err
-        }
-        console.table(rows);
-        menuOptions();
-    });
-};
-
 
 /* Employee Queries */
 
@@ -358,6 +346,7 @@ function viewEmployees () {
                 FROM employee A, employee B, job_role C, department D
                 WHERE A.manager_id = B.id 
                 AND A.role_id = C.id
+                OR A.role_id is NULL
                 AND C.department_id = D.id`
 
     db.query(sql, (err, rows) => {
