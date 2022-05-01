@@ -2,10 +2,12 @@
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const util = require('util');
-const e = require('express');
 require('dotenv').config();
+const queries = require('./db/constants');
 
-// connect to db
+
+
+//connect to db
 const db = mysql.createConnection(
     {
         host: 'localhost',
@@ -91,7 +93,9 @@ function menuOptions () {
         if (menuChoice.menu === 'Update Employee Role') {
             updateEmployeeRole();
         };
-
+        if (menuChoice.menu === 'Update Employee Manager') {
+            updateEmployeeManager();
+        };
         if (menuChoice.menu === 'Delete Employee') {
             deleteEmployee();
         };
@@ -102,7 +106,7 @@ function menuOptions () {
 
 // View all Departments
 function viewDepartments () {
-    const sql = `SELECT * FROM department`;
+    const sql = queries.departmentQueries.VIEW_DEPTS;
   
     db.query(sql, (err, rows) => {
       if (err) {
@@ -117,7 +121,7 @@ function viewDepartments () {
 function viewDepartmentBudget () {
 
     let array = [];
-    let sql = 'SELECT dep_name FROM department';
+    let sql = queries.departmentQueries.VIEW_DEPTS;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -139,12 +143,7 @@ function viewDepartmentBudget () {
             }
         )
         .then(function (menuChoice) {
-            sql = `SELECT
-                    IFNULL(SUM(salary), 0) AS "Total Utilized Budget"
-                   FROM department A, job_role B, employee C 
-                   WHERE A.id = B.department_id 
-                   AND B.id = C.role_id
-                   AND A.dep_name = ?`;
+            sql = queries.departmentQueries.VIEW_DEPT_BUDGET;
   
             db.query(sql, [menuChoice.departmentBudget], (err, rows) => {
             if (err) {
@@ -168,8 +167,7 @@ function addDepartment () {
         }
     )
     .then(function (menuChoice) {
-        const sql = `INSERT IGNORE INTO department (dep_name)
-                 VALUES (?)`
+        const sql = queries.departmentQueries.ADD_DEPT;
         db.query(sql, [menuChoice.name], (err, rows) => {
             if (err) {
                 throw err;
@@ -181,10 +179,10 @@ function addDepartment () {
 };
 
 // Delete Department
-function deleteDepartment (id) {
+function deleteDepartment () {
 
     let array = [];
-    let sql = 'SELECT dep_name FROM department';
+    let sql = queries.departmentQueries.VIEW_DEPTS;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -206,7 +204,7 @@ function deleteDepartment (id) {
             }
         )
         .then(function (menuChoice) {
-            sql = `DELETE FROM department WHERE dep_name = ?`
+            sql = queries.departmentQueries.DEL_DEPT;
 
             db.query(sql, [menuChoice.department], (err, rows) => {
                 if (err) {
@@ -223,14 +221,7 @@ function deleteDepartment (id) {
 
 // View all Roles
 function viewRoles () {
-    const sql = `SELECT 
-                    A.id,
-                    A.title,
-                    A.salary,
-                    B.dep_name
-                 FROM job_role A
-                 LEFT JOIN department B
-                 ON A.department_id = B.id`
+    const sql = queries.roleQueries.VIEW_ROLES;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -245,7 +236,7 @@ function viewRoles () {
 function addRole () {
 
     let array = [];
-    let sql = 'SELECT dep_name FROM department';
+    let sql = queries.departmentQueries.VIEW_DEPTS;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -279,8 +270,7 @@ function addRole () {
         .then(function (menuChoice) {
             let depId = 0;
 
-            sql = `SELECT id FROM department
-                   WHERE dep_name = ?`
+            sql = queries.departmentQueries.GET_DEPT_ID;
             db.query(sql, [menuChoice.department], (err, rows) => {
                 if (err) {
                     throw err;
@@ -288,8 +278,7 @@ function addRole () {
                 depId = rows[0].id;
                 console.log(depId);
 
-                sql = `INSERT INTO job_role (title, salary, department_id)
-                 VALUES (?, ?, ?)`
+                sql = queries.roleQueries.ADD_ROLE;
                 db.query(sql, [menuChoice.title, menuChoice.salary, depId], (err, rows) => {
                     if (err) {
                         throw err;
@@ -306,13 +295,7 @@ function addRole () {
 function deleteRole () {
 
     let array = [];
-    let sql = `SELECT CONCAT(
-                   A.id, ' ', 
-                   A.title, ' ', 
-                   A.salary, ' ',
-                   B.dep_name) AS "roles" 
-               FROM job_role A, department B 
-               WHERE A.department_id = B.id`;
+    let sql = queries.roleQueries.GET_ROLE_ID;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -321,7 +304,7 @@ function deleteRole () {
 
         Object.keys(rows).forEach(function(key) {
             var row = rows[key];
-            array.push(row.roles);
+            array.push(row.role);
         });
 
         inquirer.prompt(
@@ -335,7 +318,7 @@ function deleteRole () {
         .then(function (menuChoice) {
 
             const nameSplit = menuChoice.role.split(' ');
-            sql = `DELETE FROM job_role WHERE id = ?`
+            sql = queries.roleQueries.DEL_ROLES;
 
             db.query(sql, [nameSplit[0]], (err, rows) => {
                 if (err) {
@@ -352,22 +335,7 @@ function deleteRole () {
 
 // View all Employees
 function viewEmployees () {
-    const sql = `SELECT 
-                    A.id AS "employee_ID",
-                    A.first_name AS "employee_first", 
-                    A.last_name AS "employee_last",
-                    C.title AS "employee_role",
-                    D.dep_name AS "department",
-                    B.id AS "manager_ID", 
-                    B.first_name AS "manager_first", 
-                    B.last_name AS "manger_last"
-                FROM employee A
-                LEFT JOIN employee B
-                ON A.manager_id = B.id
-                LEFT JOIN job_role C
-                ON A.role_id = C.id
-                LEFT JOIN department D
-                ON C.department_id = D.id`;
+    const sql = queries.employeeQueries.VIEW_EMPLOYEES;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -382,7 +350,7 @@ function viewEmployees () {
 function viewEmployeeByManager () {
 	
 	let array = [];
-	let sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS employeeName FROM employee `;
+	let sql = queries.employeeQueries.GET_EMPLOYEES;
 	
 	db.query(sql, (err, rows) => {
 		if (err) {
@@ -405,14 +373,7 @@ function viewEmployeeByManager () {
 		)
 		.then(function (menuChoice) {
 			const nameSplit = menuChoice.employeeByManager.split(' ');
-			sql = `SELECT 
-	                A.first_name AS "employee_first", 
-	                A.last_name AS "employee_last", 
-	                B.first_name AS "manager_first", 
-	                B.last_name AS "manager_last" 
-                FROM employee A, employee B 
-                WHERE A.manager_id = B.id 
-                AND B.id = ?`;
+			sql = queries.employeeQueries.VIEW_BY_MANAGER;
 				
 			db.query(sql, [nameSplit[0]], (err, rows) => {
 			if (err) {
@@ -429,7 +390,7 @@ function viewEmployeeByManager () {
 function viewEmployeeDepartment () {
 	
 	let array = [];
-	let sql = 'SELECT dep_name FROM department';
+	let sql = queries.departmentQueries.VIEW_DEPTS;
 	
 	db.query(sql, (err, rows) => {
 		if (err) {
@@ -451,15 +412,7 @@ function viewEmployeeDepartment () {
 			}
 		)
 		.then(function (menuChoice) {
-			sql = `SELECT 
-	                A.first_name AS "employee_first", 
-	                A.last_name AS "employee_last", 
-	                B.title, 
-	                C.dep_name 
-                FROM employee A, job_role B, department C 
-                WHERE A.role_id = B.id 
-                AND B.department_id = C.id 
-                AND C.dep_name = ?`;
+			sql = queries.employeeQueries.VIEW_BY_DEPT;
 				
 			db.query(sql, [menuChoice.departmentEmployees], (err, rows) => {
 			if (err) {
@@ -477,7 +430,7 @@ function addEmployee () {
 
      // Select Title
     let titleArray = [];
-    let sql = `SELECT CONCAT(id, ' ', title) AS "role" FROM job_role`;
+    let sql = queries.roleQueries.GET_ROLE_ID;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -493,7 +446,7 @@ function addEmployee () {
 
         // Select Manager
         let managerArray = [];
-        sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS "employeeName" FROM employee `;
+        sql = queries.employeeQueries.GET_EMPLOYEES;
 
         db.query(sql, (err, rows) => {
             if (err) {
@@ -547,8 +500,7 @@ function addEmployee () {
                     manID = manChoice[0];
                 }
                 
-                const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                        VALUES (?, ?, ?, ?)`
+                const sql = queries.employeeQueries.ADD_EMPLOYEES;
             
                 db.query(sql, [menuChoice.firstName, menuChoice.lastName, roleID, manID], (err, rows) => {
                     if (err) {
@@ -565,7 +517,7 @@ function addEmployee () {
 // Update Employee Role
 function updateEmployeeRole () {
     let employeeArray = [];
-    let sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS employeeName FROM employee `;
+    let sql = queries.employeeQueries.GET_EMPLOYEES;
 	
 	db.query(sql, (err, rows) => {
 		if (err) {
@@ -578,7 +530,7 @@ function updateEmployeeRole () {
 		});
 
         let roleArray = [];
-        sql = `SELECT CONCAT(id, ' ', title) AS "roles" FROM job_role`;
+        sql = queries.roleQueries.GET_ROLE_ID;
         db.query(sql, (err, rows) => {
             if (err) {
             throw err;
@@ -586,7 +538,7 @@ function updateEmployeeRole () {
 
             Object.keys(rows).forEach(function(key) {
                 var row = rows[key];
-                roleArray.push(row.roles);
+                roleArray.push(row.role);
             });
 
             roleArray.push("NONE")
@@ -614,11 +566,9 @@ function updateEmployeeRole () {
                     const roleChoice = menuChoice.newRole.split(' ');
                     roleID = roleChoice[0];
                 }
-                const sql = `UPDATE employee 
-                    SET role_id = ?
-                    WHERE id = ?`
+                sql = queries.employeeQueries.UPDATE_EMPLOYEE_ROLE;
 
-                db.query(sql, [employeeName[0], roleID], (err, rows) => {
+                db.query(sql, [roleID, employeeName[0]], (err, rows) => {
                     if (err) {
                         throw err;
                     }
@@ -631,17 +581,69 @@ function updateEmployeeRole () {
 };
 
 // Update Manager ID
-function updateEmployeeManager (employeeId, managerId) {
-    const sql = `UPDATE employee 
-                 SET manager_id = ?
-                 WHERE id = ?`
+function updateEmployeeManager () {
+    
+    let employeeArray = [];
+    let sql = queries.employeeQueries.GET_EMPLOYEES;
+	
+	db.query(sql, (err, rows) => {
+		if (err) {
+			throw err;
+		}
+		
+		Object.keys(rows).forEach(function(key) {
+			var row = rows[key];
+			employeeArray.push(row.employeeName);
+		});
 
-    db.query(sql, [employeeId, managerId], (err, rows) => {
-        if (err) {
+        let manArray = [];
+
+        db.query(sql, (err, rows) => {
+            if (err) {
             throw err;
-        }
-        console.table(rows);
-        menuOptions();
+            }
+
+            Object.keys(rows).forEach(function(key) {
+                var row = rows[key];
+                manArray.push(row.employeeName);
+            });
+
+            manArray.push("NONE")
+
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'employee',
+                    message: 'Choose employee:',
+                    pageSize: employeeArray.length,
+                    choices: employeeArray
+                },
+                {
+                    type: 'list',
+                    name: 'manager',
+                    message: 'Choose employee\'s new manager:',
+                    pageSize: manArray.length,
+                    choices: manArray
+                }
+            ])
+            .then(function (menuChoice) {
+                const employeeName = menuChoice.employee.split(' ');
+                let manID = null;
+                if(menuChoice.manager != 'NONE'){
+                    const manChoice = menuChoice.manager.split(' ');
+                    manID = manChoice[0];
+                }
+                const sql = queries.employeeQueries.UPDATE_EMPLOYEE_MANAGER;
+
+                db.query(sql, [manID, employeeName[0]], (err, rows) => {
+                    if (err) {
+                        throw err;
+                    }
+                    console.table(rows);
+                    menuOptions();
+                });
+            });
+        });
     });
 };
 
@@ -649,7 +651,7 @@ function updateEmployeeManager (employeeId, managerId) {
 function deleteEmployee () {
 
     let array = [];
-    let sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS employeeName FROM employee `;
+    let sql = queries.employeeQueries.GET_EMPLOYEES;
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -672,7 +674,7 @@ function deleteEmployee () {
         )
         .then(function (menuChoice) {
             const nameSplit = menuChoice.employee.split(' ');
-            sql = `DELETE FROM employee WHERE id = ?`
+            sql = queries.employeeQueries.DEL_EMPLOYEE;
             
             db.query(sql, nameSplit[0], (err, rows) => {
                 if (err) {
@@ -684,6 +686,5 @@ function deleteEmployee () {
         });
      });
 };
-
 // Start App
 menuOptions();
