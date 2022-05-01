@@ -2,6 +2,7 @@
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const util = require('util');
+const e = require('express');
 require('dotenv').config();
 
 // connect to db
@@ -87,6 +88,10 @@ function menuOptions () {
         if (menuChoice.menu === 'Add Employee') {
             addEmployee();
         };
+        if (menuChoice.menu === 'Update Employee Role') {
+            updateEmployeeRole();
+        };
+
         if (menuChoice.menu === 'Delete Employee') {
             deleteEmployee();
         };
@@ -558,17 +563,70 @@ function addEmployee () {
 };
 
 // Update Employee Role
-function updateEmployee (employeeId, role) {
-    const sql = `UPDATE employee 
-                 SET role_id = ?
-                 WHERE id = ?`
+function updateEmployeeRole () {
+    let employeeArray = [];
+    let sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS employeeName FROM employee `;
+	
+	db.query(sql, (err, rows) => {
+		if (err) {
+			throw err;
+		}
+		
+		Object.keys(rows).forEach(function(key) {
+			var row = rows[key];
+			employeeArray.push(row.employeeName);
+		});
 
-    db.query(sql, [employeeId, role], (err, rows) => {
-        if (err) {
+        let roleArray = [];
+        sql = `SELECT CONCAT(id, ' ', title) AS "roles" FROM job_role`;
+        db.query(sql, (err, rows) => {
+            if (err) {
             throw err;
-        }
-        console.table(rows);
-        menuOptions();
+            }
+
+            Object.keys(rows).forEach(function(key) {
+                var row = rows[key];
+                roleArray.push(row.roles);
+            });
+
+            roleArray.push("NONE")
+
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'employee',
+                    message: 'Choose employee:',
+                    pageSize: employeeArray.length,
+                    choices: employeeArray
+                },
+                {
+                    type: 'list',
+                    name: 'newRole',
+                    message: 'Choose employee\'s new role:',
+                    pageSize: roleArray.length,
+                    choices: roleArray
+                }
+            ])
+            .then(function (menuChoice) {
+                const employeeName = menuChoice.employee.split(' ');
+                let roleID = null;
+                if(menuChoice.role != 'NONE'){
+                    const roleChoice = menuChoice.newRole.split(' ');
+                    roleID = roleChoice[0];
+                }
+                const sql = `UPDATE employee 
+                    SET role_id = ?
+                    WHERE id = ?`
+
+                db.query(sql, [employeeName[0], roleID], (err, rows) => {
+                    if (err) {
+                        throw err;
+                    }
+                    console.table(rows);
+                    menuOptions();
+                });
+            });
+        });
     });
 };
 
