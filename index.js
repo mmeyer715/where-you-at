@@ -78,14 +78,17 @@ function menuOptions () {
         if (menuChoice.menu === 'View All Employees') {
             viewEmployees();
         };
-        if (menuChoice.menu === 'Delete Employee') {
-            deleteEmployee();
-        };
         if (menuChoice.menu === 'View Employees by Manager') {
             viewEmployeeByManager();
         };
         if (menuChoice.menu === 'View Employees by Department') {
             viewEmployeeDepartment();
+        };
+        if (menuChoice.menu === 'Add Employee') {
+            addEmployee();
+        };
+        if (menuChoice.menu === 'Delete Employee') {
+            deleteEmployee();
         };
     });
 };
@@ -126,6 +129,7 @@ function viewDepartmentBudget () {
                 type: 'list',
                 name: 'departmentBudget',
                 message: 'Which department budget would you like to see?',
+                pageSize: array.length,
                 choices: array
             }
         )
@@ -192,6 +196,7 @@ function deleteDepartment (id) {
                 type: 'list',
                 name: 'department',
                 message: 'Which department would you like to remove?',
+                pageSize: array.length,
                 choices: array
             }
         )
@@ -262,6 +267,7 @@ function addRole () {
                 type: 'list',
                 name: 'department',
                 message: 'Choose a department:',
+                pageSize: array.length,
                 choices: array
             }
         ])
@@ -388,6 +394,7 @@ function viewEmployeeByManager () {
 				type: 'list',
 				name: 'employeeByManager',
 				message: 'Which manager do you want to view employees from?',
+                pageSize: array.length,
 				choices: array
 			}
 		)
@@ -434,6 +441,7 @@ function viewEmployeeDepartment () {
 				type: 'list',
 				name: 'departmentEmployees',
 				message: 'Which department do you want to view employees from?',
+                pageSize: array.length,
 				choices: array
 			}
 		)
@@ -460,18 +468,93 @@ function viewEmployeeDepartment () {
 };
 
 // Add Employee
-function addEmployee (firstName, lastName, roleId, managerId) {
-    const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                 VALUES (?, ?, ?, ?)`
-    
-    db.query(sql, [firstName, lastName, roleId, managerId], (err, rows) => {
-        if (err) {
-            throw err;
-        }
-        console.table(rows);
-        menuOptions();
-    });
+function addEmployee () {
 
+     // Select Title
+    let titleArray = [];
+    let sql = `SELECT CONCAT(id, ' ', title) AS "role" FROM job_role`;
+
+    db.query(sql, (err, rows) => {
+        if (err) {
+          throw err;
+        }
+
+        Object.keys(rows).forEach(function(key) {
+            var row = rows[key];
+            titleArray.push(row.role);
+        });
+
+        titleArray.push("NONE")
+
+        // Select Manager
+        let managerArray = [];
+        sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS "employeeName" FROM employee `;
+
+        db.query(sql, (err, rows) => {
+            if (err) {
+            throw err;
+            }
+
+            Object.keys(rows).forEach(function(key) {
+                var row = rows[key];
+                managerArray.push(row.employeeName);
+            });
+
+            managerArray.push("NONE")
+
+            inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'firstName',
+                    message: 'Input employee\'s first name:'
+                },
+                {
+                    type: 'input',
+                    name: 'lastName',
+                    message: 'Input employee\'s last name:'
+                },
+                {
+                    type: 'list',
+                    name: 'role',
+                    message: 'Choose employee\'s role:',
+                    pageSize: titleArray.length,
+                    choices: titleArray
+                },
+                {
+                    type: 'list',
+                    name: 'manager',
+                    message: 'Choose employee\'s manager:',
+                    pageSize: managerArray.length,
+                    choices: managerArray
+                }
+            ])
+            .then(function (menuChoice) {
+                
+                let roleID = null;
+                if(menuChoice.role != 'NONE'){
+                    const roleChoice = menuChoice.role.split(' ');
+                    roleID = roleChoice[0];
+                }
+                
+                let manID = null;
+                if(menuChoice.manager != 'NONE'){
+                    const manChoice = menuChoice.manager.split(' ');
+                    manID = manChoice[0];
+                }
+                
+                const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                        VALUES (?, ?, ?, ?)`
+            
+                db.query(sql, [menuChoice.firstName, menuChoice.lastName, roleID, manID], (err, rows) => {
+                    if (err) {
+                        throw err;
+                    }
+                    console.table(rows);
+                    menuOptions();
+                });    
+            });
+        });
+    });
 };
 
 // Update Employee Role
