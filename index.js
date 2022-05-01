@@ -349,12 +349,14 @@ function viewEmployees () {
                     D.dep_name AS "department",
                     B.id AS "manager_ID", 
                     B.first_name AS "manager_first", 
-                    B.last_name AS "manger_last" 
-                FROM employee A, employee B, job_role C, department D
-                WHERE A.manager_id = B.id 
-                AND A.role_id = C.id
-                OR A.role_id is NULL
-                AND C.department_id = D.id`
+                    B.last_name AS "manger_last"
+                FROM employee A
+                LEFT JOIN employee B
+                ON A.manager_id = B.id
+                LEFT JOIN job_role C
+                ON A.role_id = C.id
+                LEFT JOIN department D
+                ON C.department_id = D.id`;
 
     db.query(sql, (err, rows) => {
         if (err) {
