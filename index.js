@@ -82,7 +82,7 @@ function menuOptions () {
             deleteEmployee();
         };
         if (menuChoice.menu === 'View Employees by Manager') {
-            viewEmployeeManager();
+            viewEmployeeByManager();
         };
         if (menuChoice.menu === 'View Employees by Department') {
             viewEmployeeDepartment();
@@ -218,8 +218,9 @@ function viewRoles () {
                     A.title,
                     A.salary,
                     B.dep_name
-                 FROM job_role A, department B
-                 WHERE A.department_id = B.id`
+                 FROM job_role A
+                 LEFT JOIN department B
+                 ON A.department_id = B.id`
 
     db.query(sql, (err, rows) => {
         if (err) {
@@ -365,23 +366,49 @@ function viewEmployees () {
 };
 
 // View all Employees by Manager
-function viewEmployeeByManager (manager) {
-    const sql = `SELECT 
+function viewEmployeeByManager () {
+	
+	let array = [];
+	let sql = `SELECT CONCAT(id, ' ', first_name, ' ' ,last_name) AS employeeName FROM employee `;
+	
+	db.query(sql, (err, rows) => {
+		if (err) {
+			throw err;
+		}
+		
+		Object.keys(rows).forEach(function(key) {
+			var row = rows[key];
+			array.push(row.employeeName);
+		});
+		
+		inquirer.prompt(
+			{
+				type: 'list',
+				name: 'employeeByManager',
+				message: 'Which manager do you want to view employees from?',
+				choices: array
+			}
+		)
+		.then(function (menuChoice) {
+			const nameSplit = menuChoice.employeeByManager.split(' ');
+			sql = `SELECT 
 	                A.first_name AS "employee_first", 
 	                A.last_name AS "employee_last", 
 	                B.first_name AS "manager_first", 
-	                B.last_name AS "manger_last" 
+	                B.last_name AS "manager_last" 
                 FROM employee A, employee B 
                 WHERE A.manager_id = B.id 
-                AND B.id = ?`
-
-    db.query(sql, [manager], (err, rows) => {
-        if (err) {
-         throw err
-        }
-        console.table(rows);
-        menuOptions();
-    });
+                AND B.id = ?`;
+				
+			db.query(sql, [nameSplit[0]], (err, rows) => {
+			if (err) {
+				throw err;
+			}
+			console.table(rows);
+			menuOptions();
+			});
+		});
+	});
 };
 
 // View all Employees by Department
